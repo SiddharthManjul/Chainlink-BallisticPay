@@ -8,3 +8,4 @@ chainlink-data-streams-sdk = "1.0.0"
 chainlink-data-streams-report = "1.0.0"
 tokio = { version = "1.4", features = ["full"] }
 hex = "0.4"
+dotenv = "0.15.0"

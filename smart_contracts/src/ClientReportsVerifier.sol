@@ -34,6 +34,37 @@ interface IFeeManager {
     function i_rewardManager() external view returns (address);
 }
 
-contract Counter {
+contract ClientReportsVerifier {
     
+    error NothingToWithdraw();
+    error NotOwner(address caller);
+    error InvalidReportVersion(uint16 version);
+
+    struct ReportV3 {
+        bytes32 feedId;
+        uint32 validFromTimestamp;
+        uint32 observationsTimestamp;
+        uint192 nativeFee;
+        uint192 linkFee;
+        uint32 expiresAt;
+        int192 price;
+        int192 bid;
+        int192 ask;
+    }
+
+    struct ReportV4 {
+        bytes32 feedId;
+        uint32 validFromTimestamp;
+        uint32 observationTimestamp;
+        uint192 nativeFee;
+        uint192 linkFee;
+        uint32 expiresAt;
+        int192 price;
+        uint32 marketStatus;
+    }
+
+    IVerifierProxy public immutable i_verifierProxy;
+    address private immutable i_owner;
+    int192 public lastDecodedPrice;
+    event DecodedPrice(int192 price);
 }

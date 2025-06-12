@@ -67,4 +67,71 @@ contract ClientReportsVerifier {
     address private immutable i_owner;
     int192 public lastDecodedPrice;
     event DecodedPrice(int192 price);
+
+    constructor(address _verifierProxy) {
+        i_owner = msg.sender;
+        i_verifierProxy = IVerifierProxy(_verifierProxy);
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != i_owner) revert NotOwner(msg.sender);
+        _;
+    }
+
+    function verifyReport(bytes memory unverifiedReport) external {
+        (, bytes memory reportData) = abi.decode(
+            unverifiedReport,
+            (bytes32[3], bytes)
+        );
+
+        uint16 reportVersion = (uint16(uint8(reportData[0])) << 8) |
+            uint16(uint8(reportData[1]));
+        if (reportVersion != 3 && reportVersion != 4)
+            revert InvalidReportVersion(reportVersion);
+        
+        IFeeManager feeManager = IFeeManager(
+            address(i_verifierProxy.s_feeManager())
+        );
+
+        bytes memory parameterPayload;
+        if(address(feeManager) != address(0)) {
+            address feeToken = feeManager.i_linkAddress();
+
+            (Common.Asset memory fee, , ) = feeManager.getFeeAndReward(
+                address(this),
+                reportData,
+                feeToken
+            );
+
+            IERC20(feeToken).approve(feeManager.i_rewardManager(), fee.amount);
+            parameterPayload = abi.encode(feeToken);
+
+        } else {
+            parameterPayload = bytes("");
+        }
+
+        bytes memory verified = i_verifierProxy.verify(
+            unverifiedReport,
+            parameterPayload
+        );
+
+        if (reportVersion == 3) {
+            int192 price = abi.decode(verified, (ReportV3)).price;
+            lastDecodedPrice = price;
+            emit DecodedPrice(price);
+        } else {
+            int192 price = abi.decode(verified, (ReportV4)).price;
+            lastDecodedPrice = price;
+            emit DecodedPrice(price);
+        }
+    }
+
+    function withdrawToken(
+        address _beneficiary,
+        address _token
+    ) external onlyOwner {
+        uint256 amount = IERC20(_token).balanceOf(address(this));
+        if (amount == 0) revert NothingToWithdraw();
+        IERC20(_token).safeTransfer(_beneficiary, amount);
+    }
 }

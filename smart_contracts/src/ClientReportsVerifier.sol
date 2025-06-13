@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import {Common} from "@chainlink/contracts/src/v0.8/llo-feeds/libraries/Common.sol";

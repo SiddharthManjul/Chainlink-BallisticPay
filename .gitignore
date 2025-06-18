@@ -14,3 +14,6 @@ docs/
 .env
 
 .github
+
+node_modules/
+dist
